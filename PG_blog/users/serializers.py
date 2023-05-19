@@ -21,4 +21,6 @@ class UserSerializer(ModelSerializer):
         #     count = obj..count()
         #     return count
 
-  
+class TokenSerializer(ModelSerializer):
+    
+    fields=["token_type",'access',"exp",'iat',"user_id"]

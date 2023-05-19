@@ -6,21 +6,31 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import APIException
+from rest_framework.pagination import PageNumberPagination
+
 
 from .models import Post
 from .serializers import PostSerializer
 # Create your views here.
 
-@api_view(['GET'])
-def home(request):
-    query = Post.objects.all().order_by("-date_posted")
-    serializer = PostSerializer(query,many=True)
-    return Response(serializer.data)
 
-@api_view(['GET'])  
-def about(request):
-    return Response({"msg":"about page"})
+class Home(APIView,PageNumberPagination):
+    page_size=2
+    def get(self,request):
+        
+        query = Post.objects.all().order_by("-date_posted")
+        result = self.paginate_queryset(query,request,view=self)
+        serializer = PostSerializer(result,many=True)
+        return self.get_paginated_response(serializer.data)
+
+# @api_view(['GET'])
+# def home(request):
+#     pagination_class = PageNumberPagination
+#     query = Post.objects.all().order_by("-date_posted")
+#     serializer = PostSerializer(query,many=True)
+    
+#     return Response(serializer.data)
+
 
 class PostDetail(APIView):
     def get_object(self,pk):
@@ -33,10 +43,12 @@ class PostDetail(APIView):
     def get(self,request,pk):
         queryset =self.get_object(pk)
         serializer = PostSerializer(queryset)
+        
         print(request.user)
         return Response(serializer.data)
 
 class PostCreate(APIView):
+     
      def post(self,request):
          title = request.data['title']
          content = request.data['content']

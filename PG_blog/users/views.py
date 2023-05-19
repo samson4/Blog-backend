@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import Http404
 from django.contrib.auth.models import User
-
+import jwt
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import FormParser
 
 from users.models import NewUser,Profile
-from.serializers import UserSerializer,ProfileSerializer
+from.serializers import UserSerializer,ProfileSerializer,TokenSerializer
 
 # from .models import Post
 # from .serializers import PostSerializer
@@ -56,24 +56,46 @@ class UserProfile(APIView):
         return Response(serializer.data)
     
     def put(self,request):
-        queryset = self.get_object(request.user)
-        username = request.data['username']
-        email = request.data['email']
-        age = request.data['age']
-        nickname = request.data['nickname']
-        image = request.data['image']
-        queryset.username = username
-        queryset.email = email
-        queryset.age = age
-        queryset.nickname = nickname
-        queryset.profile.image = image
-        queryset.save()
-        print(queryset.profile.image)
+        try:
+            queryset = self.get_object(request.user)
+            username = request.data['username']
+            email = request.data['email']
+            age = request.data['age']
+            nickname = request.data['nickname']
+            image = request.data['image']
+            queryset.username = username
+            queryset.email = email
+            queryset.age = age
+            queryset.profile.image = image
+            print(image)
+            queryset.nickname = nickname
+            
+            queryset.save()
+            print(queryset.profile.image)
 
-        serializer = UserSerializer(queryset)
-        return Response(serializer.data)
-    
+            serializer = UserSerializer(queryset)
+            return Response(serializer.data)
+        except Exception as e:
+            print(e)
+        
 
+
+# from rest_framework_simplejwt.authentication import JWTAuthentication
+# JWT_authenticator = JWTAuthentication()    
+# class JWTAutentication(APIView):
+
+#     def post(self,request):
+#         print(JWT_authenticator.get_validated_token(request))
+#         response = JWT_authenticator.authenticate(request)
+#         user,*info = response
+#         print((info))
+        
+#         # for i in json.dumps(tuple(args)):
+#         # # if 'user_id' in args:
+#         #     print(json.dumps(tuple(args)))
+#         # else:
+#         #     print('False')    
+#         return Response(user)
 
    
         

@@ -7,5 +7,6 @@ urlpatterns = [
       
       path('register/',views.Register.as_view(),name='user-register'),
       path('profile/',views.UserProfile.as_view(),name="user-profile"),
+      # path('verifytoken/',views.JWTAutentication.as_view()),
   
 ]
