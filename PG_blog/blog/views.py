@@ -104,3 +104,9 @@ class PostDelete(APIView):
             return Response('delete successful') 
         except Exception as e:
             return Response({'Error':str(e)}) 
+
+class UserPosts(APIView):
+    def get(self,request,username):
+        queryset = Post.objects.filter(author__username = username)
+        serializer = PostSerializer(queryset,many=True)
+        return Response(serializer.data)         
