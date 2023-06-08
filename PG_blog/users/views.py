@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import Http404
 from django.contrib.auth.models import User
 import jwt
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
@@ -16,30 +17,44 @@ from.serializers import UserSerializer,ProfileSerializer,TokenSerializer
 # Create your views here.
 class Register(APIView):
 
-    def get(self,request):
+    def get(self,request,**kwargs):
         queryset = NewUser.objects.all()
         serializer = UserSerializer(queryset,many=True)
-
-        return Response(serializer.data) 
+        
+        return Response(serializer.data,status=status.HTTP_200_OK) 
        
-    def post(self,request):
+    def post(self,request,**kwargs):
         username = request.data['username']
         email =request.data['email']
         password=request.data['password']
         try:
             existingUser = NewUser.objects.get(username=username)
             if existingUser:
-                return Response("Duplicate User already exists")
+                return Response("Duplicate User already exists",status=status.HTTP_400_BAD_REQUEST)
         except:
             queryset = NewUser.objects.create_user(username = username,email = email,password = password)
             serializer = UserSerializer(queryset)
-            return Response(serializer.data)
+           
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        
+    
+    
         # if NewUser.objects.get(username=username):
         #     return Response("Duplicate User already exists")
         # else:
         #     queryset = NewUser.objects.create_user(username = username,email = email,password = password)
         #     serializer = UserSerializer(queryset)
         #     return Response(serializer.data)
+
+class DeleteUser(APIView):
+    def delete(self,request,id):
+        try:
+            queryset = NewUser.objects.filter(id=id)
+            queryset.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except queryset.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
 
 class UserProfile(APIView):
     permission_classes=[IsAuthenticated]
@@ -78,6 +93,7 @@ class UserProfile(APIView):
         except Exception as e:
             print(e)
         
+
 
 
 # from rest_framework_simplejwt.authentication import JWTAuthentication
