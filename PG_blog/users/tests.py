@@ -1,23 +1,26 @@
+import json
 from django.test import TestCase, Client
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIRequestFactory
+from rest_framework.test import APIRequestFactory,force_authenticate
 from .models import NewUser
 from .serializers import UserSerializer
-from .views import Register
+from .views import Register,UserProfile
 from collections import OrderedDict
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView
+)
 
 
-
-class MyTestCase(TestCase):
+class RegisterViewTestCase(TestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.view = Register.as_view()
-        
+        self.url = reverse('user-register')
         self.test_user = NewUser.objects.create_user(username='testuser', password='testpass', email='test@example.com')
-
-
-
+        
 
     def test_get_all_users(self):
         url = reverse('user-register')
@@ -49,10 +52,56 @@ class MyTestCase(TestCase):
 
         # check that the response data matches the expected output
         serializer = UserSerializer(response.data)
-        expected_output = {'id':2,'username': 'newuser', 'email': 'newuser@example.com', 'age':None, 'nickname':None,'profile':{'image_url': 'http://localhost:8000/media/default.jpg', 'make_thumbnail': 'http://localhost:8000/media/default.jpg'}}
-        
+        expected_output = {'id':3,'username': 'newuser', 'email': 'newuser@example.com', 'age':None, 'nickname':None,'profile':{'image_url': 'http://localhost:8000/media/default.jpg', 'make_thumbnail': 'http://localhost:8000/media/default.jpg'}}
         
         self.assertEqual(serializer.data,expected_output)
+
+        # check that the new user has been created in the database
+        new_user = NewUser.objects.filter(username='newuser').first()
+        self.assertIsNotNone(new_user)
+
+    def test_create_duplicate_user(self):
+        # simulate a POST request to the view with a duplicate username
+        invalid_data = {'username': 'testuser', 'email': 'testuser@example.com', 'password': 'testpass'}  
+        register_url =self.url 
+        request = self.factory.post(register_url,invalid_data)
+        response = self.view(request) 
+
+        self.assertEqual(response.status_code,status.HTTP_400_BAD_REQUEST)
+        # print(response.data)
+
+
+class UserProfileViewTestCase(TestCase):
+    def setUp(self):
+        self.factory =  APIRequestFactory()
+        self.view = UserProfile.as_view()
+        
+        self.url = reverse("user-profile")
+        self.test_user = NewUser.objects.create_user(username='testuser', password='testpass', email='test@example.com')
+    def test_profile_get_all_users(self):
+    
+
+        # Obtain Token for authentication
+        loginurl = reverse("token_obtain_pair")
+        data = {
+        'username': 'testuser',
+        'password': 'testpass'
+                }
+        
+        login_request = self.factory.post("/api/token/",data)
+        view = TokenObtainPairView.as_view()
+        res=view(login_request)
+        token = res.data['access']
+
+        
+        # Simulate a get request for user profile
+        request = self.factory.get(self.url)
+        force_authenticate(request,user=self.test_user,token=token)
+        response = self.view(request)
+        self.assertEqual(response.status_code,status.HTTP_200_OK)
+        expected_output = {'id':5,'username': 'testuser', 'email': 'test@example.com', 'age':None, 'nickname':None,'profile':{'image_url': 'http://localhost:8000/media/default.jpg', 'make_thumbnail': 'http://localhost:8000/media/default.jpg'}}
+        self.assertEqual(response.data,expected_output)
+        
 
 # class RegisterViewTestCase(TestCase):
 #     def setUp(self):
