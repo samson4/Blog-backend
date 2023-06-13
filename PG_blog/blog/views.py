@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.models import User
 from django.http import Http404
+from django.db.models import Q
 
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -109,4 +110,15 @@ class UserPosts(APIView):
     def get(self,request,username):
         queryset = Post.objects.filter(author__username = username)
         serializer = PostSerializer(queryset,many=True)
-        return Response(serializer.data)         
+        return Response(serializer.data) 
+
+
+class SearchPosts(APIView,PageNumberPagination):
+    page_size=2
+    def get(self,request):
+        query = request.GET.get('query')
+        queryset = Post.objects.filter(Q(content__icontains = query)) | Post.objects.filter(Q(title__icontains = query))
+        result = self.paginate_queryset(queryset,request,view=self)
+        serializer = PostSerializer(result,many=True)
+        return self.get_paginated_response(serializer.data)
+                
