@@ -117,7 +117,7 @@ class SearchPosts(APIView,PageNumberPagination):
     page_size=2
     def get(self,request):
         query = request.GET.get('query')
-        queryset = Post.objects.filter(Q(content__icontains = query)) | Post.objects.filter(Q(title__icontains = query))
+        queryset = Post.objects.filter(Q(content__icontains = query)).order_by("-date_posted") | Post.objects.filter(Q(title__icontains = query)).order_by("-date_posted")
         result = self.paginate_queryset(queryset,request,view=self)
         serializer = PostSerializer(result,many=True)
         return self.get_paginated_response(serializer.data)
